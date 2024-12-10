@@ -14,10 +14,6 @@ import (
 	"golang.org/x/crypto/sha3"
 )
 
-func isPowerOfTwo(n int) bool {
-	return n > 0 && (n&(n-1)) == 0
-}
-
 func wordExists(word string, wordlist []string) bool {
 	for _, w := range wordlist {
 		if w == word {
@@ -118,6 +114,56 @@ func printBeautifully(title string, words []string) {
 		fmt.Printf("%*d. %s\n", numberPadding, i+1, word)
 	}
 }
+
+func printStyled(text string) {
+	reset := "\033[0m"
+	styles := map[string]string{
+		"red":       "\033[31m",
+		"green":     "\033[32m",
+		"yellow":    "\033[33m",
+		"blue":      "\033[34m",
+		"magenta":   "\033[35m",
+		"cyan":      "\033[36m",
+		"white":     "\033[37m",
+		"bold":      "\033[1m",
+		"underline": "\033[4m",
+	}
+	for style, code := range styles {
+		placeholder := fmt.Sprintf("{%s}", style)
+		text = strings.ReplaceAll(text, placeholder, code)
+	}
+	text = strings.ReplaceAll(text, "{reset}", reset)
+	fmt.Print(text + reset)
+}
+
+func pressAnyKey() {
+	printStyled("\n{bold}{cyan}Press any key to continue...\n")
+	bufio.NewReader(os.Stdin).ReadByte()
+	fmt.Println()
+}
+func choice(message string, first string, second string, letter1 string, letter2 string) bool {
+	var userinput string
+	letter1 = strings.ToUpper(letter1)
+	letter2 = strings.ToUpper(letter2)
+	reader := bufio.NewReader(os.Stdin)
+	for {
+		printStyled("{bold}{cyan}" + message)
+		printStyled("\nPlease Choose {bold}{cyan}(" + letter1 + ") {reset}" + first + ", or {bold}{cyan}(" + letter2 + ") {reset}" + second + ": ")
+		userinput, _ = reader.ReadString('\n')
+		userinput = strings.ToUpper(userinput)
+		userinput = strings.TrimSpace(userinput)
+		if userinput == letter1 || userinput == letter2 {
+			break
+		}
+		printStyled("\n{red}Invalid choice!\n")
+	}
+	if userinput == letter1 {
+		return true
+	} else {
+		return false
+	}
+}
+
 func main() {
 	var words = []string{
 		"academic", "acid", "acne", "acquire", "acrobat", "activity", "actress", "adapt", "adequate", "adjust",
@@ -227,82 +273,83 @@ func main() {
 
 	wordCount := len(words)
 
-	if !isPowerOfTwo(wordCount) {
-		fmt.Printf("Error: The wordlist must contain a power of 2 elements, but it contains %d elements.", wordCount)
-		return
-	}
-	fmt.Print("Welcome to the wallet word scrambler\n\n")
-	fmt.Print("It will use a password and salt to create a new wallet words backup\n")
-	fmt.Print("from your existing wallet words\n\n")
-	fmt.Print("The word list is the SLIP39 English wordlist containing 1024 words\n\n")
-	fmt.Print("Warning:\n")
-	fmt.Print("This program is meant to run on a formated and air gapped machine\n")
-	fmt.Print("It is not safe to run it on a machine connected to any kind of network\n")
-	fmt.Print("Even tough we save nothing - wipe your machine after use\n\n")
+	printStyled("\n\n{cyan}{bold}{underline}Welcome to the wallet word scrambler\n\n")
+	printStyled("A password and salt will be use to scramble your backup words\n")
+	printStyled("The word list is the SLIP39 English wordlist containing 1024 words\n\n")
+	printStyled("{red}Warning:\n")
+	printStyled("{yellow}This program is meant to run on a fresh formated and air gapped machine\n")
+	printStyled("{yellow}It is not safe to run it on a machine connected to any kind of network\n")
+	printStyled("{yellow}Though we save nothing - {bold}secure wipe{reset}{yellow} your machine after use\n\n")
+
+	pressAnyKey()
+	recover := choice("Do you want to recover a wallet or create (scramble) a new one?", "Recover", "Create", "R", "C")
 	reader := bufio.NewReader(os.Stdin)
+	if recover {
+		printStyled("\nLets recover your wallet\n")
+	} else {
+		printStyled("\nLets create a new wallet\n\nChoose a strong password (and be sure to remember it)\n")
+	}
+
 	var password1, password2 string
 	for {
-		fmt.Print("Enter your password: ")
+		printStyled("\n{cyan}Enter password: ")
 		password1, _ = reader.ReadString('\n')
 		password1 = strings.TrimSpace(password1)
 
-		fmt.Print("Confirm the password: ")
+		printStyled("{cyan}Confirm the password: ")
 		password2, _ = reader.ReadString('\n')
 		password2 = strings.TrimSpace(password2)
 
 		if password1 != password2 {
-			fmt.Println("Error: Passwords do not match. Try again.")
+			printStyled("{red}{bold}\nError: Passwords do not match. Try again.")
 			continue
 		}
 
-		if isWeakPassword(password1) {
-			fmt.Println("Warning: Your password is weak. It should be at least 8 characters long and include a mix of uppercase, lowercase, numbers, and special characters.")
-			fmt.Print("Do you want to continue with this password? (yes/no): ")
+		if !recover && isWeakPassword(password1) {
+			printStyled("\n{yellow}Warning: Your password is weak. It should be at least 8 characters long\n")
+			printStyled("{yellow}and include a mix of uppercase, lowercase, numbers, and special characters.\n")
+			printStyled("{yellow}Type 'yes' if you want to continue with this password :")
 			confirmation, _ := reader.ReadString('\n')
 			confirmation = strings.TrimSpace(strings.ToLower(confirmation))
 			if confirmation == "yes" {
-				fmt.Println("Password accepted.")
+				printStyled("\n{green}Ok, weak password accepted.")
 				break
 			} else {
-				fmt.Println("Please enter a stronger password.")
+				printStyled("\n{green}Please enter a stronger password.")
 				continue
 			}
 		} else {
-			fmt.Println("Password accepted.")
+			printStyled("\n{green}Password accepted.")
 			break
 		}
 	}
-	fmt.Print("\n *** NEVER forget your password - there is no way to recover it ***\n\n")
-	var saltOption string
-	fmt.Println("Do you have salt words or would you like to generate them randomly?\n('(M)anual' or '(R)andom'):")
-	for {
-		fmt.Print("Your choice: ")
-		saltOption, _ = reader.ReadString('\n')
-		saltOption = strings.TrimSpace(strings.ToLower(saltOption))
-		if saltOption == "m" || saltOption == "r" {
-			break
-		}
-		fmt.Println("Invalid choice. Please enter 'M' or 'R'.")
+	if !recover {
+		printStyled("\n\n{yellow}Don't forget your password - there is {underline}NO WAY{reset}{yellow} to recover it!\n\n")
 	}
-
+	pressAnyKey()
 	var saltCount int
-
 	for {
-		fmt.Print("\nEnter the number of salt words (0-16, at least 4 recommended): ")
+		if recover {
+			printStyled("\n{cyan}How many words in your salt? (0-16): ")
+		} else {
+			printStyled("\n{cyan}Enter the number of salt words (0-16, at least 4 recommended): ")
+		}
+
 		input, _ := reader.ReadString('\n')
 		input = strings.TrimSpace(input)
-		number, err := strconv.Atoi(input)
-		if err != nil || number < 0 || number > 16 {
-			fmt.Println("\nInvalid input. Please enter a number between 0 and 16.")
+		var err error
+		saltCount, err = strconv.Atoi(input)
+		if err != nil || saltCount < 0 || saltCount > 16 {
+			printStyled("\n{red}Invalid input. Please enter a number between 0 and 16.")
 			continue
 		}
-		saltCount = number
 		break
 	}
 
 	var saltWords []string
 
-	if saltOption == "m" {
+	if recover {
+		printStyled("\n")
 		for i := 0; i < saltCount; i++ {
 			for {
 				fmt.Printf("Enter salt word %d: ", i+1)
@@ -316,7 +363,8 @@ func main() {
 				}
 			}
 		}
-	} else if saltOption == "r" {
+		printStyled("\n{green}Salt words entered.")
+	} else {
 		for i := 0; i < saltCount; i++ {
 			index, err := rand.Int(rand.Reader, big.NewInt(int64(len(words))))
 			if err != nil {
@@ -326,10 +374,11 @@ func main() {
 			randomWord := words[index.Int64()]
 			saltWords = append(saltWords, randomWord)
 		}
+		printStyled("\n{green}Salt words generated.")
 	}
 
-	fmt.Print("\nCalculating key from your salt and password.\n")
-	fmt.Print("For safty reasons, this is supposed to take a while...\n\n")
+	printStyled("\n\n{green}Calculating key from your salt and password.\n")
+	printStyled("{green}For security reasons, this is SUPPOSED to take a while...\n\n")
 
 	salt := strings.Join(saltWords, "")
 	argon2Seed := hashRepeatedly([]byte(salt), 4847868)
@@ -344,11 +393,16 @@ func main() {
 	wordBitSize := int(math.Log2(float64(wordCount)))
 	keybitswords := splitString(varkeybits, wordBitSize)
 
+	printStyled("\n{green}Key generated.\n")
+
 	var walletWordCount int
 	for {
-		fmt.Print("\nEnter the number of words in your wallet (4-33): ")
-		_, err := fmt.Scan(&walletWordCount)
-		if err == nil && walletWordCount >= 4 && walletWordCount <= 33 {
+		printStyled("\n{cyan}Enter the number of words in your wallet (12-33): ")
+		input, _ := reader.ReadString('\n')
+		input = strings.TrimSpace(input)
+		var err error
+		walletWordCount, err = strconv.Atoi(input)
+		if err == nil && walletWordCount >= 12 && walletWordCount <= 33 {
 			break
 		}
 		fmt.Println("Invalid input. Please enter a number between 12 and 33.")
@@ -364,7 +418,7 @@ func main() {
 			if wordExists(word, words) {
 				break
 			}
-			fmt.Println("Invalid word. Please enter a valid word from the wordlist.")
+			printStyled("\n{red}Invalid word. Please enter a valid word from the wordlist.\n")
 		}
 
 		wordIndex := -1
@@ -381,11 +435,16 @@ func main() {
 		newWords[i] = words[newWordIndex]
 	}
 
-	fmt.Print("\n*** Here are your new wallet words ***\n")
-
+	if !recover {
+		printStyled("\n{bold}{underline}{cyan}Here are your new wallet words\n")
+	} else {
+		printStyled("\n{bold}{underline}{cyan}Here are your recovered wallet words\n")
+	}
 	printBeautifully("Salt:", saltWords)
 	printBeautifully("Wallet Words:", newWords)
 
-	fmt.Print("\n\nWrite both salt and words down and store them in a safe place.\n\n")
-	fmt.Print("*** NEVER forget your password - there is no way to recover it ***\n\n")
+	if !recover {
+		printStyled("\n\nWrite both salt and words down and store them in a safe place.\n\n")
+	}
+	pressAnyKey()
 }
