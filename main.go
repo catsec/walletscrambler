@@ -381,6 +381,9 @@ func main() {
 	printStyled("{green}For security reasons, this is SUPPOSED to take a while...\n\n")
 
 	salt := strings.Join(saltWords, "")
+	if salt == "" {
+		salt = "I was too lazy to enter a salt"
+	}
 	argon2Seed := hashRepeatedly([]byte(salt), 4847868)
 
 	memory := uint32(1024 * 1024)
