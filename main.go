@@ -377,8 +377,8 @@ func main() {
 		printStyled("\n{green}Salt words generated.")
 	}
 
-	printStyled("\n\n{green}Calculating key from your salt and password.\n")
-	printStyled("{green}For security reasons, this is SUPPOSED to take a while...\n\n")
+	printStyled("\n\n{cyan}Calculating key from your salt and password.\n")
+	printStyled("{cyan}For security reasons, this is SUPPOSED to take a while...\n\n")
 
 	salt := strings.Join(saltWords, "")
 	if salt == "" {
