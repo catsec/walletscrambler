@@ -6,6 +6,29 @@ output_names=("wallet-scrambler-windows-amd64.exe" "wallet-scrambler-linux-amd64
 for i in "${!platforms[@]}"; do
     platform=${platforms[$i]}
     output=${output_names[$i]}
-    GOOS=${platform%/*} GOARCH=${platform#*/} go build -o $output
-    echo "Built $output"
+    
+    GOOS=${platform%/*}
+    GOARCH=${platform#*/}
+    
+    GOOS=$GOOS GOARCH=$GOARCH go build -o $output
+    if [ $? -eq 0 ]; then
+        echo "Built $output"
+    else
+        echo "Failed to build $output" >&2
+        exit 1
+    fi
+
+    signature_file="${output}.asc"
+    if [ -f "$signature_file" ]; then
+        rm -f "$signature_file"
+        echo "Removed existing signature: $signature_file"
+    fi
+    
+    gpg --detach-sign --armor -o "$signature_file" "$output"
+    if [ $? -eq 0 ]; then
+        echo "Successfully signed $output -> $signature_file"
+    else
+        echo "Failed to sign $output" >&2
+        exit 1
+    fi
 done
