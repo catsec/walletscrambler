@@ -8,14 +8,16 @@ This program helps you securely transform your existing wallet words (from a SLI
 - **Password Protection**: Derives cryptographic keys using a password you provide.
 - **Salt Support**: Allows you to provide additional entropy with manually entered or randomly generated salt words.
 - **Secure Key Derivation**: Utilizes Argon2 and SHA3-256 for cryptographic operations.
+- **Enhanced security**: using only go build-in libraries and officlal argon2 & sha3.
 - **Air-Gapped Usage**: Designed to run on a machine disconnected from any network for maximum security.
+
 
 ---
 
 ## Requirements
 
 - **Go** (Golang) installed (version 1.16+ recommended).
-
+- **Or...** Download the precompiled standalone programs for your system (but it's never a good practice)
 ---
 
 ## Usage Instructions
