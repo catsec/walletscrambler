@@ -440,10 +440,11 @@ func main() {
 
 	if !recover {
 		printStyled("\n{bold}{underline}{cyan}Here are your new wallet words\n")
+		printBeautifully("Salt:", saltWords)
 	} else {
 		printStyled("\n{bold}{underline}{cyan}Here are your recovered wallet words\n")
 	}
-	printBeautifully("Salt:", saltWords)
+
 	printBeautifully("Wallet Words:", newWords)
 
 	if !recover {
